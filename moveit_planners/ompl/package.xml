@@ -26,6 +26,8 @@
   <depend version_gte="1.11.2">pluginlib</depend>
 
   <test_depend>moveit_resources_pr2_description</test_depend>
+  <test_depend>moveit_resources_fanuc_moveit_config</test_depend>
+  <test_depend>moveit_resources_panda_moveit_config</test_depend>
   <test_depend>rosunit</test_depend>
 
   <export>

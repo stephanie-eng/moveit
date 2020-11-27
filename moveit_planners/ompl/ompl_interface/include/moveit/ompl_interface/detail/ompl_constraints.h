@@ -231,8 +231,14 @@ protected:
   /** \brief Upper and lower bounds on constrained variables. */
   std::vector<Bounds> bounds_;
 
-  /** \brief target for equality constraints, nominal value for inequality constraints. */
+  /** \brief end position for equality constraints, nominal value for inequality constraints. */
   Eigen::Vector3d target_position_;
+
+  /** \brief start position for equality constraints. */
+  Eigen::Vector3d start_position_;
+
+  /** \brief end position for equality constraints. */
+  Eigen::Vector3d end_position_;
 
   /** \brief target for equality constraints, nominal value for inequality constraints. */
   Eigen::Quaterniond target_orientation_;
@@ -263,6 +269,48 @@ public:
   virtual void parseConstraintMsg(const moveit_msgs::Constraints& constraints) override;
   virtual Eigen::VectorXd calcError(const Eigen::Ref<const Eigen::VectorXd>& x) const override;
   virtual Eigen::MatrixXd calcErrorJacobian(const Eigen::Ref<const Eigen::VectorXd>& x) const override;
+};
+
+  /******************************************
+ * Linear System Position Constraints
+ * ****************************************/
+/** \brief Linear System constraints on a link's position.
+ *
+ *  When you set the name of a constraint to 'linear_system_constraints', all constraints with a dimension lower that
+ * `equality_constraint_threshold_` will be modelled as equality constraints.
+ *
+ * The dimension value for the others are ignored. For example, a box with dimensions [1.0, 1e-5, 1.0]
+ * will result in equality constraints on the y-position, and no constraints on the x or z-position.
+ * */
+class LinearSystemPositionConstraint : public BaseConstraint
+{
+public:
+  LinearSystemPositionConstraint(const robot_model::RobotModelConstPtr& robot_model, const std::string& group,
+                             const unsigned int num_dofs);
+  virtual void parseConstraintMsg(const moveit_msgs::Constraints& constraints) override;
+  void function(const Eigen::Ref<const Eigen::VectorXd>& joint_values, Eigen::Ref<Eigen::VectorXd> out) const override;
+  // void jacobian(const Eigen::Ref<const Eigen::VectorXd>& joint_values, Eigen::Ref<Eigen::MatrixXd> out) const override;
+
+private:
+  /** \brief Position bounds under this threshold are interpreted as equality constraints, the others as unbounded.
+   *
+   * This threshold value should be larger that the tolerance of the constraints specificied in ompl
+   * (ompl::magic::CONSTRAINT_PROJECTION_TOLERANCE = 1e-4).
+   *
+   *
+   * This is necessary because the constraints are also checked by MoveIt in the StateValidity checker. If this check
+   * would use a stricter tolerance than was used to satisfy the constraints in OMPL, all states would be invalid.
+   * Therefore the dimension of an equality constraint specified in the constraint message should be larger than OMPL's
+   * tolerance, and therefore this threshold should be too.
+   *
+   * equality_constraint_threshold_ > tolerance in constraint message > MoveIt constraint checker tolerance
+   *
+   * That's why the value is 1e-3 > 1e-4.
+   * **/
+  double equality_constraint_threshold_{ 0.001 };
+
+  /** \brief Bool vector indicating wich dimensions are constrained. **/
+  std::vector<bool> is_dim_constrained_;
 };
 
 /******************************************

@@ -192,7 +192,7 @@ void EqualityPositionConstraint::parseConstraintMsg(const moveit_msgs::Constrain
       {
         ROS_ERROR_NAMED(
             LOGNAME,
-            "Dimension %i of position constraint is smaller than the tolerance used to evaluate the constraints. "
+            "Dimension %li of position constraint is smaller than the tolerance used to evaluate the constraints. "
             "This will make all states invalid and planning will fail :( Please use a value between %f and %f. ",
             i, getTolerance(), equality_constraint_threshold_);
       }
@@ -241,11 +241,11 @@ void EqualityPositionConstraint::jacobian(const Eigen::Ref<const Eigen::VectorXd
   }
 }
 
-  /******************************************
+/******************************************
  * Linear System constraints
  * ****************************************/
 LinearSystemPositionConstraint::LinearSystemPositionConstraint(const robot_model::RobotModelConstPtr& robot_model,
-                                                       const std::string& group, const unsigned int num_dofs)
+                                                               const std::string& group, const unsigned int num_dofs)
   : BaseConstraint(robot_model, group, num_dofs)
 {
 }
@@ -266,7 +266,7 @@ void LinearSystemPositionConstraint::parseConstraintMsg(const moveit_msgs::Const
       {
         ROS_ERROR_NAMED(
             LOGNAME,
-            "Dimension %i of position constraint is smaller than the tolerance used to evaluate the constraints. "
+            "Dimension %li of position constraint is smaller than the tolerance used to evaluate the constraints. "
             "This will make all states invalid and planning will fail :( Please use a value between %f and %f. ",
             i, getTolerance(), equality_constraint_threshold_);
       }
@@ -282,8 +282,7 @@ void LinearSystemPositionConstraint::parseConstraintMsg(const moveit_msgs::Const
   geometry_msgs::Point position =
       constraints.position_constraints.at(0).constraint_region.primitive_poses.at(0).position;
   start_position_ << position.x, position.y, position.z;
-  position =
-      constraints.position_constraints.at(0).constraint_region.primitive_poses.at(1).position;
+  position = constraints.position_constraints.at(0).constraint_region.primitive_poses.at(1).position;
   end_position_ << position.x, position.y, position.z;
   tf::quaternionMsgToEigen(constraints.position_constraints.at(0).constraint_region.primitive_poses.at(0).orientation,
                            target_orientation_);
@@ -293,34 +292,36 @@ void LinearSystemPositionConstraint::parseConstraintMsg(const moveit_msgs::Const
 }
 
 void LinearSystemPositionConstraint::function(const Eigen::Ref<const Eigen::VectorXd>& joint_values,
-                                          Eigen::Ref<Eigen::VectorXd> out) const
+                                              Eigen::Ref<Eigen::VectorXd> out) const
 {
-  Eigen::Vector3d cartesianPosition = target_orientation_.matrix().transpose() * forwardKinematics(joint_values).translation();
+  Eigen::Vector3d cartesianPosition =
+      target_orientation_.matrix().transpose() * forwardKinematics(joint_values).translation();
   Eigen::Vector2d residual;
-  residual[0] = (end_position_.x() - start_position_.x())*(cartesianPosition.y() - start_position_.y())-(end_position_.y() - start_position_.y())*(cartesianPosition.x() - start_position_.x());
-  residual[1] = (end_position_.y() - start_position_.y())*(cartesianPosition.z() - start_position_.z())-(end_position_.z() - start_position_.z())*(cartesianPosition.y() - start_position_.y());
+  residual[0] = (end_position_.x() - start_position_.x()) * (cartesianPosition.y() - start_position_.y()) -
+                (end_position_.y() - start_position_.y()) * (cartesianPosition.x() - start_position_.x());
+  residual[1] = (end_position_.y() - start_position_.y()) * (cartesianPosition.z() - start_position_.z()) -
+                (end_position_.z() - start_position_.z()) * (cartesianPosition.y() - start_position_.y());
   out = residual;
 }
 
-
 void LinearSystemPositionConstraint::jacobian(const Eigen::Ref<const Eigen::VectorXd>& joint_values,
-                                          Eigen::Ref<Eigen::MatrixXd> out) const
+                                              Eigen::Ref<Eigen::MatrixXd> out) const
 {
   out.setZero();
   Eigen::MatrixXd jac = target_orientation_.matrix().transpose() * robotGeometricJacobian(joint_values).topRows(3);
   Eigen::MatrixXd dresidual_dcartesianPosition;
   // d residual[0] / d x
-  dresidual_dcartesianPosition[0,0] = start_position_.y() - end_position_.y();
+  dresidual_dcartesianPosition(0, 0) = start_position_.y() - end_position_.y();
   // d residual[1] / d x
-  dresidual_dcartesianPosition[1,0] = 0;
+  dresidual_dcartesianPosition(1, 0) = 0;
   // d residual[0] / d y
-  dresidual_dcartesianPosition[0,1] = end_position_.x() - start_position_.x();
+  dresidual_dcartesianPosition(0, 1) = end_position_.x() - start_position_.x();
   // d residual[1] / d y
-  dresidual_dcartesianPosition[1,1] = start_position_.z() - end_position_.z();
+  dresidual_dcartesianPosition(1, 1) = start_position_.z() - end_position_.z();
   // d residual[0] / d z
-  dresidual_dcartesianPosition[0,1] = 0;
+  dresidual_dcartesianPosition(0, 1) = 0;
   // d residual[1] / d z
-  dresidual_dcartesianPosition[1,1] = end_position_.y() - start_position_.y();
+  dresidual_dcartesianPosition(1, 1) = end_position_.y() - start_position_.y();
   out = dresidual_dcartesianPosition * jac;
 }
 

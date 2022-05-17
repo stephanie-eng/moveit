@@ -156,8 +156,8 @@ void PlanningScene::initialize()
   acm_->setEntry(collision_links, collision_links, false);
 
   // allow collisions for pairs that have been disabled
-  const std::vector<srdf::Model::DisabledCollision>& dc = getRobotModel()->getSRDF()->getDisabledCollisionPairs();
-  for (const srdf::Model::DisabledCollision& it : dc)
+  const std::vector<srdf::Model::CollisionPair>& dc = getRobotModel()->getSRDF()->getDisabledCollisionPairs();
+  for (const srdf::Model::CollisionPair& it : dc)
     acm_->setEntry(it.link1_, it.link2_, true);
 
   setActiveCollisionDetector(collision_detection::CollisionDetectorAllocatorFCL::create());

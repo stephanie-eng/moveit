@@ -271,7 +271,7 @@ public:
   virtual Eigen::MatrixXd calcErrorJacobian(const Eigen::Ref<const Eigen::VectorXd>& x) const override;
 };
 
-  /******************************************
+/******************************************
  * Linear System Position Constraints
  * ****************************************/
 /** \brief Linear System constraints on a link's position.
@@ -286,10 +286,10 @@ class LinearSystemPositionConstraint : public BaseConstraint
 {
 public:
   LinearSystemPositionConstraint(const robot_model::RobotModelConstPtr& robot_model, const std::string& group,
-                             const unsigned int num_dofs);
+                                 const unsigned int num_dofs);
   virtual void parseConstraintMsg(const moveit_msgs::Constraints& constraints) override;
   void function(const Eigen::Ref<const Eigen::VectorXd>& joint_values, Eigen::Ref<Eigen::VectorXd> out) const override;
-  // void jacobian(const Eigen::Ref<const Eigen::VectorXd>& joint_values, Eigen::Ref<Eigen::MatrixXd> out) const override;
+  void jacobian(const Eigen::Ref<const Eigen::VectorXd>& joint_values, Eigen::Ref<Eigen::MatrixXd> out) const override;
 
 private:
   /** \brief Position bounds under this threshold are interpreted as equality constraints, the others as unbounded.
